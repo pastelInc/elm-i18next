@@ -1,15 +1,16 @@
 module I18Next
     exposing
         ( Delims(Curly, Custom, Underscore)
+        , Msg
         , Replacements
         , Translations
         , decodeTranslations
-        , fetchTranslations
-        , initialTranslations
+        , loadingTranslations
         , t
         , tf
         , tr
         , trf
+        , update
         )
 
 {-| This library provides a solution to load and display translations in your
@@ -20,17 +21,17 @@ needed.
 
 # Types and Data
 
-@docs Translations, Delims, Replacements, initialTranslations
+@docs Translations, Delims, Replacements, Msg
 
 
 # Using Translations
 
-@docs t, tr, tf, trf
+@docs t, tr, tf, trf, update
 
 
 # Fetching and Decoding
 
-@docs fetchTranslations, decodeTranslations
+@docs decodeTranslations, loadingTranslations
 
 -}
 
@@ -70,6 +71,22 @@ type alias Replacements =
     List ( String, String )
 
 
+{-| -}
+type Msg
+    = TranslationsLoaded (Result Http.Error Translations)
+
+
+{-| -}
+update : Msg -> Translations -> Translations
+update msg translations =
+    case msg of
+        TranslationsLoaded (Ok translations_) ->
+            translations_
+
+        TranslationsLoaded (Err _) ->
+            translations
+
+
 {-| Use this to initialize Translations in your model. This may be needed
 when loading translations but you need to initialize your model before
 your translations are fetched.
@@ -77,6 +94,12 @@ your translations are fetched.
 initialTranslations : Translations
 initialTranslations =
     Translations Dict.empty
+
+
+{-| -}
+loadingTranslations : String -> ( Translations, Cmd Msg )
+loadingTranslations lang =
+    ( initialTranslations, fetchTranslations TranslationsLoaded "/locale/translations.en.json" )
 
 
 {-| Decode a JSON translations file. The JSON can be arbitrarly nested, but the

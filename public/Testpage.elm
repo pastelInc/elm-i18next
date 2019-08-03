@@ -1,20 +1,17 @@
 module Testpage exposing (..)
 
-import Html exposing (program, Html, div, text)
+import Html exposing (Html, div, program, text)
 import I18Next
     exposing
-        ( Translations
-        , Delims(..)
+        ( Delims(..)
+        , Translations
         , t
         , tr
-        , fetchTranslations
-        , initialTranslations
         )
-import Http
 
 
 type Msg
-    = TranslationsLoaded (Result Http.Error Translations)
+    = UpdateTranslations I18Next.Msg
 
 
 main : Program Never Model Msg
@@ -34,7 +31,11 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model initialTranslations, fetchTranslations TranslationsLoaded "/locale/translations.en.json" )
+    let
+        ( translations, cmd ) =
+            I18Next.loadingTranslations "en"
+    in
+    ( Model translations, Cmd.map UpdateTranslations cmd )
 
 
 view : Model -> Html msg
@@ -58,8 +59,9 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        TranslationsLoaded (Ok translations) ->
+        UpdateTranslations subMsg ->
+            let
+                translations =
+                    I18Next.update subMsg model.translations
+            in
             ( { model | translations = translations }, Cmd.none )
-
-        TranslationsLoaded (Err _) ->
-            ( model, Cmd.none )
